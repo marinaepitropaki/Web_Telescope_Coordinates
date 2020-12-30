@@ -109,20 +109,21 @@ app.layout = html.Div([
         children=[
             html.H6("Telescope Information Box:"),
             html.Br(),
-            html.Div(id ='telescope-div')
+            html.Div(id ='info-box'),
+            html.Div(id='telescope-graph')
             ])
 ])
-
+#put a second output
 @app.callback(
-    Output('telescope-div', 'children'),
+    Output('info-box', 'children'),
+    Output('telescope-graph', 'children'),
     Input('tele-info', 'children'))
 def update_output_div(sample_tele, orientation='west'):
     telescope1 = fake_telescope()
-    # print(f'The telescope coordinates are: \
-    #         \n Hourangle: {telescope1[0]}\
-    #         \n Declination:{telescope1[1]}\
-    #         \n Orientation: {orientation}')
-    return telescope1
+    return (f'The telescope coordinates are: \
+            \n Hourangle: {telescope1[0]}\
+            \n Declination:{telescope1[1]}\
+            \n Orientation: {orientation}', telescope1)
 
 
 @app.callback(
@@ -136,7 +137,7 @@ def update_output(n_clicks, value):
     Output('my-graph', 'figure'),
     Input('main-interval', 'n_intervals'),
     Input('data-div', 'children'),
-    Input('telescope-div', 'children'))
+    Input('telescope-graph', 'children'))
 def update_figure(n_intervals, data, telescope, orientation='west'):
     
     if orientation == 'east':
@@ -201,7 +202,7 @@ def update_figure(n_intervals, data, telescope, orientation='west'):
 #FAKE TELESCOPE
 def fake_telescope():
     fake_tel = [random.uniform(0., 24.), random.uniform(-10., 90)]
-
+    print('the fake telescope function', fake_tel)
     return fake_tel
 
 
