@@ -16,8 +16,9 @@ import plotly.graph_objects as go
 import dash_core_components as dcc
 import dash_html_components as html
 from collections import OrderedDict
-from dash.exceptions import PreventUpdate
 from pymodbus.constants import Endian
+import dash_bootstrap_components as dbc
+from dash.exceptions import PreventUpdate
 from plotly.subplots import make_subplots
 from matplotlib.dates import  DateFormatter
 from astropy.coordinates import FK4, ICRS, FK5
@@ -28,11 +29,11 @@ from astropy import coordinates as coord, units as u
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from astropy.coordinates import SkyCoord, Angle, Latitude, Longitude, EarthLocation
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+# app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-#plot forbidden zones
+app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 #Forbiden regions dictionary
 
 f_zone = {'west': {'left_x':np.array([9.3,  8.9,  8.6,  8.2,  7.8,  7.3,  7., 
@@ -94,37 +95,83 @@ FILEPATH = '/home/marina/Downloads/ra_dec_array.csv'
 SUHORALATIT = 49.56917288
 SUHORALONGIT= 20.06728579
 
-app.layout = html.Div([
-    dcc.Graph(id='my-graph'),
-    dcc.Interval(id='main-interval', interval=2000),
+table_header = [
+    html.Thead(html.Tr([html.Th("Telescope Information Box:")]))
+]
+row1 = html.Tr([html.Td("Hourangle:"), html.Td(id="hourangle", children="")])
+row2 = html.Tr([html.Td("Declination:"), html.Td(id="declination", children="")])
+row3 = html.Tr([html.Td("Orientation:"), html.Td(id="orientation", children="")])
 
-    html.Div([
-        html.Div(
-            dcc.Textarea(id='text-field',style={'width': 350, 'height': 200},)),
-            html.Button('Submit', id='submit-button', n_clicks=0),
-            html.Div(id='data-div'),
-            ]),
+table_body = [html.Tbody([row1, row2, row3])]
 
-    html.Div( id="tele-info", 
-        children=[
-            html.H6("Telescope Information Box:"),
-            html.Br(),
-            html.Div(id ='info-box'),
-            html.Div(id='telescope-graph')
-            ])
+table = dbc.Table(table_header + table_body, bordered=False)
+
+app.layout = dbc.Container(
+    [
+        dbc.Row(
+            [
+                dbc.Col(children=[
+                            dcc.Graph(id='my-graph'),
+                            dcc.Interval(id='main-interval', interval=2000)
+                                 ]
+                        )
+            ], align='center',
+                ),
+        dbc.Row(
+            [
+                dbc.Col(children=[
+                
+                    html.Div([
+                        html.Div(
+                            dcc.Textarea(id='text-field',
+                                         style={'width': 350, 'height': 200},)
+                        ),
+                        html.Button('Submit', id='submit-button', n_clicks=0),
+                        html.Div(id='data-div', style={'display': 'none'}),
+                        ])
+                ]),
+                dbc.Col(table, width={'size': 5, 'offset': 0}),
+
+                dbc.Col(),
+                html.Div(id='telescope_position', 
+                                 style={'display': 'none'})
+            ], align='center',
+        ),
 ])
-#put a second output
-@app.callback(
-    Output('info-box', 'children'),
-    Output('telescope-graph', 'children'),
-    Input('tele-info', 'children'))
-def update_output_div(sample_tele, orientation='west'):
-    telescope1 = fake_telescope()
-    return (f'The telescope coordinates are: \
-            \n Hourangle: {telescope1[0]}\
-            \n Declination:{telescope1[1]}\
-            \n Orientation: {orientation}', telescope1)
 
+@app.callback(
+    Output('telescope_position', 'children'),
+    Input('main-interval', 'n_intervals'))
+def update_telescope_state(interval):
+    telescope1 = fake_telescope()
+    return telescope1
+
+@app.callback(
+    Output('hourangle', 'children'),
+    Output('declination', 'children'),
+    Output('orientation','children'),
+    Input('telescope_position', 'children'),
+    Input('main-interval', 'n_intervals'))
+def update_info_box(position, intervals, orientations='west'):
+    hours = position[0]
+    mins = hours-math.modf(hours)[1]
+    mins = mins*60
+    secs = mins - math.modf(mins)[1]
+    secs = secs*60
+    ra = (int(math.modf(hours)[1]), int(math.modf(mins)[1]), int(math.modf(secs)[1]))
+    hourangle = f'{ra[0]}:{ra[1]}:{ra[2]}'
+
+    degr = position[1]
+    if degr<0:
+        degr= degr+360
+    mins = degr-math.modf(degr)[1]
+    mins = mins*60
+    secs = mins - math.modf(mins)[1]
+    secs = secs*60
+    dec = (int(math.modf(degr)[1]), int(math.modf(mins)[1]), int(math.modf(secs)[1]))
+    declination = f'{dec[0]}:{dec[1]}:{dec[2]}'
+    orientation = orientations
+    return hourangle, declination, orientation
 
 @app.callback(
     Output('data-div', 'children'),
@@ -137,7 +184,7 @@ def update_output(n_clicks, value):
     Output('my-graph', 'figure'),
     Input('main-interval', 'n_intervals'),
     Input('data-div', 'children'),
-    Input('telescope-graph', 'children'))
+    Input('telescope_position', 'children'))
 def update_figure(n_intervals, data, telescope, orientation='west'):
     
     if orientation == 'east':
@@ -202,7 +249,7 @@ def update_figure(n_intervals, data, telescope, orientation='west'):
 #FAKE TELESCOPE
 def fake_telescope():
     fake_tel = [random.uniform(0., 24.), random.uniform(-10., 90)]
-    print('the fake telescope function', fake_tel)
+    # print('the fake telescope function', fake_tel)
     return fake_tel
 
 
