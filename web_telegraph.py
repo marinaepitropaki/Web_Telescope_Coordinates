@@ -5,6 +5,7 @@ import time
 import math
 import struct
 import random
+import logging
 import datetime
 import argparse
 import numpy as np
@@ -29,13 +30,19 @@ from astropy import coordinates as coord, units as u
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from astropy.coordinates import SkyCoord, Angle, Latitude, Longitude, EarthLocation
 
-# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+script_path = os.path.dirname(os.path.realpath(__file__))
 
-# app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+logging.basicConfig(filename=os.path.join(script_path, 'app.log'),
+                    filemode='w',
+                    level=logging.DEBUG
+                    )
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+#UNIT FOR MODBUS CLIENT
+UNIT = 0x1
+
 #Forbiden regions dictionary
-
 f_zone = {'west': {'left_x':np.array([9.3,  8.9,  8.6,  8.2,  7.8,  7.3,  7., 
                                         6.6,  6.2,  5.6,  5. ,4.6,  4.1,  3.7, 
                                         3.3,  2.6,  1.5, 0,0]),
@@ -143,7 +150,15 @@ app.layout = dbc.Container(
     Output('telescope_position', 'children'),
     Input('main-interval', 'n_intervals'))
 def update_telescope_state(interval):
-    telescope1 = fake_telescope()
+
+    logging.info('Updating telescope state')
+    client = ModbusClient('192.168.2.16', port=502)
+    try:
+        telescope1 = mount_telescope(client,[8212, 8210])
+    except:
+        pass
+    # telescope1 = fake_telescope()
+
     return telescope1
 
 @app.callback(
@@ -153,31 +168,41 @@ def update_telescope_state(interval):
     Input('telescope_position', 'children'),
     Input('main-interval', 'n_intervals'))
 def update_info_box(position, intervals, orientations='west'):
-    hours = position[0]
-    mins = hours-math.modf(hours)[1]
+
+    logging.info(f'Updating info box with telescope coordinates{position}')
+
+    hourangle = position[0]
+    mins = hourangle-math.modf(hourangle)[1]
     mins = mins*60
     secs = mins - math.modf(mins)[1]
     secs = secs*60
-    ra = (int(math.modf(hours)[1]), int(math.modf(mins)[1]), int(math.modf(secs)[1]))
-    hourangle = f'{ra[0]}:{ra[1]}:{ra[2]}'
+    ra = (int(math.modf(hourangle)[1]), 
+          int(math.modf(mins)[1]),
+          int(math.modf(secs)[1]))
+    right_ascension = f'{ra[0]:02d}:{ra[1]:02d}:{ra[2]:02d}'
 
     degr = position[1]
-    if degr<0:
-        degr= degr+360
     mins = degr-math.modf(degr)[1]
     mins = mins*60
     secs = mins - math.modf(mins)[1]
     secs = secs*60
+    if degr<0:
+        mins = -mins
+        secs = -secs
     dec = (int(math.modf(degr)[1]), int(math.modf(mins)[1]), int(math.modf(secs)[1]))
-    declination = f'{dec[0]}:{dec[1]}:{dec[2]}'
+    declination = f'{dec[0]:02d}:{dec[1]:02d}:{dec[2]:02d}'
     orientation = orientations
-    return hourangle, declination, orientation
+
+    return right_ascension, declination, orientation
 
 @app.callback(
     Output('data-div', 'children'),
     Input('submit-button', 'n_clicks'),
     State('text-field', 'value'))
 def update_output(n_clicks, value):
+
+    logging.info('Button clicked')
+
     return value
 
 @app.callback(
@@ -187,6 +212,8 @@ def update_output(n_clicks, value):
     Input('telescope_position', 'children'))
 def update_figure(n_intervals, data, telescope, orientation='west'):
     
+    logging.info('Figure update')
+
     if orientation == 'east':
         f_zone_data = f_zone['east']
     else:
@@ -194,11 +221,11 @@ def update_figure(n_intervals, data, telescope, orientation='west'):
 
     print(telescope)
     # telescope = mount_telescope(telescope_coordinates)
-
+# if not connection with modbus catch the error with except and pass
     fig = make_subplots(rows=1, cols=1)
     fig.add_trace(go.Scatter(x = f_zone_data['down_x'], 
                              y = f_zone_data['down_y'], 
-                             fill='toself', fillcolor='yellow',
+                             fill='toself', fillcolor='red',
                              mode='none'),row=1,col=1)
 
     fig.add_trace(go.Scatter(x = f_zone_data['left_x'], 
@@ -249,45 +276,49 @@ def update_figure(n_intervals, data, telescope, orientation='west'):
 #FAKE TELESCOPE
 def fake_telescope():
     fake_tel = [random.uniform(0., 24.), random.uniform(-10., 90)]
-    # print('the fake telescope function', fake_tel)
     return fake_tel
 
 
-#REAL TELESCOPE 
-# def mount_telescope(reg):
-#     telescope = []
-#     for r in reg:
-#         time.sleep(1)
-#         result = register_decoder(client, r)
-#         result = result*(180/math.pi)
-#         if r == 8212:
-#             result = result/15
-#             if result < 12:
-#                 result = result +12
-#             else:
-#                 result = result -12
-#         telescope.append(result)
-#         telescope.append(reg)
-#     time.sleep(0.5)
-#     return telescope
+# REAL TELESCOPE 
+def register_decoder(client, reg):
+    rr = client.read_input_registers(reg, 2, unit=UNIT)
+    print(rr)
+    decoder = BinaryPayloadDecoder.fromRegisters(rr.registers, 
+                                                byteorder=Endian.Big, 
+                                                wordorder=Endian.Big
+                                                )
+    print(decoder)
+    decoded_result = decoder.decode_32bit_float()
+    return decoded_result
+
+def mount_telescope(client, reg):
+    telescope = []
+    for r in reg:
+        time.sleep(1)
+        result = register_decoder(client, r)
+        result = result*(180/math.pi)
+        if r == 8212:
+            result = result/15
+            if result < 12:
+                result = result +12
+            else:
+                result = result -12
+        telescope.append(result)
+        telescope.append(reg)
+    time.sleep(0.5)
+    return telescope
 
 def read_textfield(text):
     object_data = []
     splitted_text = text.split('\n')
-    # print(splitted_text)
     for i, row in enumerate (splitted_text):
         if not row:
             continue
-        # print("row", row)
         splitted_row = row.split(',')
-        # print("splitted_row", splitted_row)
         str_row = [str(f) for f in splitted_row[0:]]
-        # print("str_row", str_row)
         object_data.append(str_row)
-    # print("object_data", object_data)
 
     object_array = np.array(object_data)
-    # print('object_array',object_array)
     return object_array
 
 #LOADING OF THE FILE WITH THE COORDINATES OF THE OBJECTS
@@ -376,5 +407,6 @@ def coordinates_calculations(input_array_data):#input: object's data
 
 if __name__ == '__main__':
     # csv_object_array = exract_csv_file(FILEPATH)
-    
-    app.run_server(debug=True)
+    app.run_server(host=os.getenv("HOST", "0.0.0.0"), 
+                   port=os.getenv("PORT", "8050"),
+                   debug=True)
