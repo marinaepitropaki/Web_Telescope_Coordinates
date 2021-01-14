@@ -257,7 +257,7 @@ def update_figure(n_intervals, data, telescope_position):
     if telescope_position is not None:
         
         fig.add_trace(go.Scatter(x=[telescope_position['hours']], y=[telescope_position['degrees']], 
-                                mode="markers+text", text=['telescope']),
+                                mode="markers+text", text=['Telescope']),
                                 row=1, col=1)
 
     if data:
