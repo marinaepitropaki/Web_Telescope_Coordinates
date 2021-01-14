@@ -1,4 +1,5 @@
 import os
+import sys
 import dash
 import json
 import time
@@ -8,6 +9,7 @@ import random
 import logging
 import datetime
 import argparse
+import pymodbus
 import numpy as np
 import pandas as pd
 import astropy.units as u
@@ -41,9 +43,15 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 #UNIT FOR MODBUS CLIENT
 UNIT = 0x1
+#Degrees transformation
+degrees_transformation = 180/math.pi
+#Registers
+register = {'ra':8212,
+            'dec':8210
+            }
 
 #Forbiden regions dictionary
-f_zone = {'west': {'left_x':np.array([9.3,  8.9,  8.6,  8.2,  7.8,  7.3,  7., 
+f_zone = {'WEST': {'left_x':np.array([9.3,  8.9,  8.6,  8.2,  7.8,  7.3,  7., 
                                         6.6,  6.2,  5.6,  5. ,4.6,  4.1,  3.7, 
                                         3.3,  2.6,  1.5, 0,0]),
                     'left_y': np.array([-35, -30, -25, -20, -15, -10, -5, 0, 5,
@@ -68,7 +76,7 @@ f_zone = {'west': {'left_x':np.array([9.3,  8.9,  8.6,  8.2,  7.8,  7.3,  7.,
 
                     'down_y': np.array ([-35, -20, -20 , -35])
                         },
-            'east': {    'left_x': np.array([10.8, 10,9.4, 8.8, 8.7, 8.6 , 8.2,
+            'EAST': {    'left_x': np.array([10.8, 10,9.4, 8.8, 8.7, 8.6 , 8.2,
                                               8., 7.4 ,7. ,6.6 ,6.3 ,6.1 , 5.5, 
                                               5.2, 4.6 , 4. , 0,0]),
 
@@ -147,53 +155,62 @@ app.layout = dbc.Container(
 ])
 
 @app.callback(
-    Output('telescope_position', 'children'),
+    Output('telescope_position', 'data-main'),
     Input('main-interval', 'n_intervals'))
 def update_telescope_state(interval):
 
     logging.info('Updating telescope state')
     client = ModbusClient('192.168.2.16', port=502)
-    try:
-        telescope1 = mount_telescope(client,[8212, 8210])
-    except:
+    is_open = client.is_socket_open()
+    telescope_position = {}
+    if is_open:
+        # telescope_position = mount_telescope(client,register)
         pass
-    # telescope1 = fake_telescope()
+    else:
+        # telescope_position= None 
+        telescope_position = mount_telescope(client)
+         
 
-    return telescope1
+    return telescope_position
 
 @app.callback(
     Output('hourangle', 'children'),
     Output('declination', 'children'),
     Output('orientation','children'),
-    Input('telescope_position', 'children'),
+    Input('telescope_position', 'data-main'),
     Input('main-interval', 'n_intervals'))
-def update_info_box(position, intervals, orientations='west'):
+def update_info_box(telescope_position, intervals):
 
-    logging.info(f'Updating info box with telescope coordinates{position}')
+    logging.info(f'Updating info box with telescope coordinates{telescope_position}')
+    if telescope_position is not None:
+        hourangle = telescope_position['hours']
+        mins = hourangle-math.modf(hourangle)[1]
+        mins = mins*60
+        secs = mins - math.modf(mins)[1]
+        secs = secs*60
+        ra = (int(math.modf(hourangle)[1]), 
+            int(math.modf(mins)[1]),
+            int(math.modf(secs)[1]))
+        right_ascension = f'{ra[0]:02d}:{ra[1]:02d}:{ra[2]:02d}'
 
-    hourangle = position[0]
-    mins = hourangle-math.modf(hourangle)[1]
-    mins = mins*60
-    secs = mins - math.modf(mins)[1]
-    secs = secs*60
-    ra = (int(math.modf(hourangle)[1]), 
-          int(math.modf(mins)[1]),
-          int(math.modf(secs)[1]))
-    right_ascension = f'{ra[0]:02d}:{ra[1]:02d}:{ra[2]:02d}'
+        degr = telescope_position['degrees']
+        mins = degr-math.modf(degr)[1]
+        mins = mins*60
+        secs = mins - math.modf(mins)[1]
+        secs = secs*60
+        if degr<0:
+            mins = -mins
+            secs = -secs
+        dec = (int(math.modf(degr)[1]), int(math.modf(mins)[1]), int(math.modf(secs)[1]))
+        declination = f'{dec[0]:02d}:{dec[1]:02d}:{dec[2]:02d}'
 
-    degr = position[1]
-    mins = degr-math.modf(degr)[1]
-    mins = mins*60
-    secs = mins - math.modf(mins)[1]
-    secs = secs*60
-    if degr<0:
-        mins = -mins
-        secs = -secs
-    dec = (int(math.modf(degr)[1]), int(math.modf(mins)[1]), int(math.modf(secs)[1]))
-    declination = f'{dec[0]:02d}:{dec[1]:02d}:{dec[2]:02d}'
-    orientation = orientations
+        
+    else:
+        right_ascension = '.. : .. : ..'
+        declination = '.. :.. : ..'
+   
 
-    return right_ascension, declination, orientation
+    return right_ascension, declination, telescope_position['orientation']
 
 @app.callback(
     Output('data-div', 'children'),
@@ -201,7 +218,7 @@ def update_info_box(position, intervals, orientations='west'):
     State('text-field', 'value'))
 def update_output(n_clicks, value):
 
-    logging.info('Button clicked')
+    logging.info('Button update')
 
     return value
 
@@ -209,23 +226,18 @@ def update_output(n_clicks, value):
     Output('my-graph', 'figure'),
     Input('main-interval', 'n_intervals'),
     Input('data-div', 'children'),
-    Input('telescope_position', 'children'))
-def update_figure(n_intervals, data, telescope, orientation='west'):
-    
+    Input('telescope_position', 'data-main'))
+def update_figure(n_intervals, data, telescope_position):
     logging.info('Figure update')
+    #ORIENTATION
+    
+    f_zone_data = f_zone[telescope_position['orientation']]
 
-    if orientation == 'east':
-        f_zone_data = f_zone['east']
-    else:
-        f_zone_data = f_zone['west']
-
-    print(telescope)
-    # telescope = mount_telescope(telescope_coordinates)
-# if not connection with modbus catch the error with except and pass
+    #PLOTS
     fig = make_subplots(rows=1, cols=1)
     fig.add_trace(go.Scatter(x = f_zone_data['down_x'], 
                              y = f_zone_data['down_y'], 
-                             fill='toself', fillcolor='red',
+                             fill='toself', fillcolor='yellow',
                              mode='none'),row=1,col=1)
 
     fig.add_trace(go.Scatter(x = f_zone_data['left_x'], 
@@ -242,8 +254,9 @@ def update_figure(n_intervals, data, telescope, orientation='west'):
                              y = f_zone_data['up_y'], 
                              fill='toself',fillcolor='purple',
                              mode='none')) 
-    if telescope is not None:
-        fig.add_trace(go.Scatter(x=[telescope[0]], y=[telescope[1]], 
+    if telescope_position is not None:
+        
+        fig.add_trace(go.Scatter(x=[telescope_position['hours']], y=[telescope_position['degrees']], 
                                 mode="markers+text", text=['telescope']),
                                 row=1, col=1)
 
@@ -261,7 +274,7 @@ def update_figure(n_intervals, data, telescope, orientation='west'):
     fig.update_traces(showlegend=False)
     plot_time = datetime.datetime.utcnow()
     plot_time = plot_time.strftime('%d-%m-%Y %H:%M:%S')
-    telescope_side = orientation.upper()
+    telescope_side = telescope_position['orientation'].upper()
     fig.update_layout(transition_duration=500, autosize=False,width=1000,
                         height=600, 
                         title={'text': f'{plot_time}, {telescope_side}',
@@ -275,13 +288,18 @@ def update_figure(n_intervals, data, telescope, orientation='west'):
 
 #FAKE TELESCOPE
 def fake_telescope():
-    fake_tel = [random.uniform(0., 24.), random.uniform(-10., 90)]
-    return fake_tel
+    # fake_tel = [random.uniform(0., 24.), random.uniform(-10., 90)]
+    ra = (random.uniform(0., 24.)*math.pi)/180
+    dec = (random.uniform(-10., 180.)*math.pi)/180
+    
+    return {'ra':ra,
+            'dec':dec
+            }
 
 
-# REAL TELESCOPE 
-def register_decoder(client, reg):
-    rr = client.read_input_registers(reg, 2, unit=UNIT)
+# REAL TELESCOPE DECODER
+def register_decoder(client, register):
+    rr = client.read_input_registers(register, 2, unit=UNIT)
     print(rr)
     decoder = BinaryPayloadDecoder.fromRegisters(rr.registers, 
                                                 byteorder=Endian.Big, 
@@ -291,23 +309,38 @@ def register_decoder(client, reg):
     decoded_result = decoder.decode_32bit_float()
     return decoded_result
 
-def mount_telescope(client, reg):
-    telescope = []
-    for r in reg:
-        time.sleep(1)
-        result = register_decoder(client, r)
-        result = result*(180/math.pi)
-        if r == 8212:
-            result = result/15
-            if result < 12:
-                result = result +12
-            else:
-                result = result -12
-        telescope.append(result)
-        telescope.append(reg)
-    time.sleep(0.5)
-    return telescope
+#REAL TELESCOPE MOUNT
+def mount_telescope(client):
+    
+    # decoded_result = register_decoder(client, register)
+    "FAKE REGISTER DECODER"
+    decoded_result = fake_telescope()
+    decoded_result['ra'] = decoded_result['ra']*(180/math.pi)
+    # hour = decoded_result['ra']/15
+    hours = decoded_result['ra']
+    if hours < 12:
+        hours = hours +12
+    else:
+        hours = hours -12
+    time.sleep(1)
+    decoded_result['dec'] = decoded_result['dec']*(180/math.pi)
+    orientation='EAST'
+    degrees = decoded_result['dec']
+    if  degrees > 90:
+        degrees = 180-degrees
+        orientation = 'WEST'
+    elif degrees < -90:
+        degrees = -180-degrees
+        orientation = 'WEST'
 
+    telescope_position = {'hours': hours,
+                          'degrees': degrees,
+                          'orientation':orientation}
+        
+    time.sleep(0.5)
+    return telescope_position
+
+#READ DATA FROM TEXTFIELD BOX
 def read_textfield(text):
     object_data = []
     splitted_text = text.split('\n')
@@ -344,14 +377,11 @@ def exract_csv_file(filepath):
 
 #CALCULATION OF THE LOCAL SIDERAL TIME AND THE OBSERVATION TIME
 def LST_calculation(latit, longit):
-
     suhora = EarthLocation(lat=latit*u.deg, lon=longit*u.deg)
-
     observing_time = Time(datetime.datetime.utcnow(), 
                           scale='utc', 
                           location=suhora
                           )
-
     LST = observing_time.sidereal_time('mean')
 
     return observing_time, LST
@@ -360,8 +390,7 @@ def LST_calculation(latit, longit):
 def hourangle_conversion(object_array, LST, observing_time):
     np_object_array = np.array(object_array)
     """Conversion of ra in hourangle"""
-    object_array_LHA = np_object_array.copy()
-    
+    object_array_LHA = np_object_array.copy()    
     coo  = SkyCoord(object_array_LHA[:,1], 
                     object_array_LHA[:,2], 
                     frame='icrs', 
@@ -372,32 +401,29 @@ def hourangle_conversion(object_array, LST, observing_time):
     object_array_LHA[:,2] = coo.dec
     FK5_Jnow = FK5(equinox=observing_time)
     LHA = LST - coo.transform_to(FK5_Jnow).ra.to(u.hourangle)
-    object_array_LHA[:,1] = LHA
-    
+    object_array_LHA[:,1] = LHA    
     for i, l in enumerate(object_array_LHA[:,1]):
         l = float(l) * u.hourangle
         if l < 0 * u.hourangle:
             l += 24 * u.hourangle
-            object_array_LHA[i,1] = l
-    
+            object_array_LHA[i,1] = l    
     for i, l in enumerate(object_array_LHA[:,1]):
         l = float(l) * u.hourangle
         if l < 12*u.hourangle:
             object_array_LHA[i,1] = l + 12*u.hourangle
         elif l >= 12*u.hourangle:
-            object_array_LHA[i,1] = l - 12*u.hourangle
-    
+            object_array_LHA[i,1] = l - 12*u.hourangle    
     
     return object_array_LHA
 
-
+#TRANSFORMATION TO LHA
 def coordinates_transformation(object_array_LHA):
     array_for_plot = object_array_LHA.copy()
     array_for_plot[:,1] = object_array_LHA[:,1].astype(float)
     array_for_plot[:,2] = object_array_LHA[:,2].astype(float)
     return array_for_plot
 
-
+#CALCULATION OF THE COORDINATES
 def coordinates_calculations(input_array_data):#input: object's data
     
     observing_time, LST = LST_calculation(SUHORALATIT, SUHORALONGIT)
