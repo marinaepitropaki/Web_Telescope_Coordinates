@@ -12,6 +12,7 @@ import argparse
 import pymodbus
 import numpy as np
 import pandas as pd
+import plotly.io as pio
 import astropy.units as u
 import plotly.express as px
 from astropy.time import Time
@@ -40,7 +41,7 @@ logging.basicConfig(filename=os.path.join(script_path, 'app.log'),
                     )
 # client = ModbusClient('127.0.0.1', port=8888)
 client = ModbusClient('192.168.2.16', port=502)
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 
 #UNIT FOR MODBUS CLIENT
 UNIT = 0x1
@@ -140,9 +141,20 @@ app.layout = dbc.Container(
                     html.Div([
                         html.Div(
                             dcc.Textarea(id='text-field',
-                                         style={'width': 350, 'height': 200},)
+                                         placeholder = 'V432Per,03 10 10.8,42 52 08.8',
+                                         style={'width': 350, 
+                                                'height': 200,
+                                                'background-color': '#212024',
+                                                'border-style': 'solid',
+                                                'color':'white'},)
                         ),
-                        html.Button('Submit', id='submit-button', n_clicks=0),
+                        html.Button('Submit', 
+                                    id='submit-button', 
+                                    n_clicks=0,
+                                    style={'background-color': '#212024', 
+                                            'color':'white',
+                                            'border-style': 'solid'}
+                                    ),
                         html.Div(id='data-div', style={'display': 'none'}),
                         ])
                 ]),
@@ -152,7 +164,7 @@ app.layout = dbc.Container(
                 html.Div(id='telescope_position', 
                                  style={'display': 'none'})
             ], align='center',
-        ),
+        ), 
 ])
 
 @app.callback(
@@ -269,8 +281,8 @@ def update_figure(n_intervals, data, telescope_position):
                                  mode="markers+text", 
                                  text=array_for_plot[:,0]),row=1,col=1)
 
-    fig.update_xaxes(showgrid=True, range=[0, 24])
-    fig.update_yaxes(showgrid=True, range=[-30, 90])
+    fig.update_xaxes(showgrid=True, range=[0, 24], color="white",)
+    fig.update_yaxes(showgrid=True, range=[-30, 90], color="white",)
     fig.update_traces(showlegend=False)
     plot_time = datetime.datetime.utcnow()
     plot_time = plot_time.strftime('%d-%m-%Y %H:%M:%S')
@@ -282,7 +294,10 @@ def update_figure(n_intervals, data, telescope_position):
                                 'x':0.5,
                                 'xanchor': 'center',
                                 'yanchor': 'top'
-                                })
+                                }, 
+                                paper_bgcolor='#212024', 
+                                title_font_color='white',
+                                )
 
     return fig
 
