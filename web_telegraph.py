@@ -196,27 +196,8 @@ def update_info_box(telescope_position, intervals):
 
     logging.info(f'Updating info box with telescope coordinates {telescope_position}')
     if telescope_position:
-        hourangle = telescope_position['hours']
-        mins = hourangle-math.modf(hourangle)[1]
-        mins = mins*60
-        secs = mins - math.modf(mins)[1]
-        secs = secs*60
-        ra = (int(math.modf(hourangle)[1]), 
-            int(math.modf(mins)[1]),
-            int(math.modf(secs)[1]))
-        right_ascension = f'{ra[0]:02d}:{ra[1]:02d}:{ra[2]:02d}'
-
-        degr = telescope_position['degrees']
-        mins = degr-math.modf(degr)[1]
-        mins = mins*60
-        secs = mins - math.modf(mins)[1]
-        secs = secs*60
-        if degr<0:
-            mins = -mins
-            secs = -secs
-        dec = (int(math.modf(degr)[1]), int(math.modf(mins)[1]), int(math.modf(secs)[1]))
-        declination = f'{dec[0]:02d}:{dec[1]:02d}:{dec[2]:02d}'
-
+        right_ascension, declination = deg_to_hex(telescope_position['hours'],
+                                                  telescope_position['degrees'])
         
     else:
         right_ascension = '.. : .. : ..'
@@ -275,14 +256,33 @@ def update_figure(n_intervals, data, telescope_position):
     if data:
         input_array = read_textfield(data)
         array_for_plot = coordinates_calculations(input_array)
+        ra_hex, dec_hex = deg_to_hex(array_for_plot[:,1], 
+                                            array_for_plot[:,2]
+                                            )
         # array_for_plot =  coordinates_calculations()
-        fig.add_trace(go.Scatter(x=array_for_plot[:,1], 
-                                 y=array_for_plot[:,2], 
-                                 mode="markers+text", 
-                                 text=array_for_plot[:,0]),row=1,col=1)
-
-    fig.update_xaxes(showgrid=True, range=[0, 24], color="white",)
-    fig.update_yaxes(showgrid=True, range=[-30, 90], color="white",)
+        fig.add_trace(
+            go.Scatter(
+                x=array_for_plot[:,1],
+                y=array_for_plot[:,2],
+                hovertemplate=[
+                    f'RA:{x} DEC:{y}' for x, y in zip(ra_hex, dec_hex)
+                    ],
+                mode="markers+text", 
+                text=array_for_plot[:,0],
+                ),
+            row=1, col=1
+        )
+    fig.update_xaxes(showgrid=True, 
+                     gridwidth=1, 
+                     gridcolor='black', 
+                     range=[0, 24], 
+                     color="white",)
+    fig.update_yaxes(showgrid=True,
+                     gridwidth=1, 
+                     gridcolor='black', 
+                     zerolinecolor='red',
+                     range=[-30, 90], 
+                     color="white",)
     fig.update_traces(showlegend=False)
     plot_time = datetime.datetime.utcnow()
     plot_time = plot_time.strftime('%d-%m-%Y %H:%M:%S')
@@ -297,9 +297,50 @@ def update_figure(n_intervals, data, telescope_position):
                                 }, 
                                 paper_bgcolor='#212024', 
                                 title_font_color='white',
+                                xaxis = dict(tickmode = 'array',
+                                             tickvals = list(range(25)),
+                                             ticktext = [str(x) for x in range(12, 24)] + [str(x) for x in range(0, 13)],
                                 )
+    )
 
     return fig
+
+def deg_to_hex(hours, dec):
+    logging.info(f'hours{hours}, dec{dec}')
+    hourangle = hours.astype(np.float)
+    logging.info(f'hourangle{hourangle}')
+    mins = hourangle-np.modf(hourangle)[1]
+    mins = mins*60
+    secs = mins - np.modf(mins)[1]
+    secs = secs*60
+    ra = np.array([(np.modf(hourangle)[1]), (np.modf(mins)[1]),
+                    np.modf(secs)[1]
+                    ])
+
+    right_ascension =[]  
+    for h in ra.astype(int).T:
+        right_ascension.append(f'{h[0]:02d}:{h[1]:02d}:{h[2]:02d}')
+    logging.info(f'right_ascension{right_ascension}')
+
+    degr = dec.astype(np.float)
+    logging.info(f'degr{degr}')
+    mins = degr-np.modf(degr)[1]
+    mins = mins*60
+    secs = mins - np.modf(mins)[1]
+    secs = secs*60
+    mins = np.abs(mins)
+    secs = np.abs(secs)
+    dec = np.array([np.modf(degr)[1], 
+                    np.modf(mins)[1], 
+                    np.modf(secs)[1]])
+    declination=[]
+    for d in dec.astype(int).T:
+        declination.append(f'{d[0]:02d}:{d[1]:02d}:{d[2]:02d}')
+    logging.info(f'declination{declination}')
+
+    return right_ascension, declination
+    
+
 
 #FAKE TELESCOPE
 def fake_telescope():
