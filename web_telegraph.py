@@ -289,18 +289,24 @@ def update_figure(n_intervals, data, telescope_position):
     telescope_side = telescope_position.get('orientation', 'EAST').upper()
     fig.update_layout(transition_duration=500, autosize=False,width=1000,
                         height=600, 
-                        title={'text': f'{plot_time}, {telescope_side}',
+                        title={'text': f'{plot_time} UTC, {telescope_side}',
                                 'y':0.9,
                                 'x':0.5,
                                 'xanchor': 'center',
-                                'yanchor': 'top'
+                                'yanchor': 'top',
                                 }, 
-                                paper_bgcolor='#212024', 
-                                title_font_color='white',
-                                xaxis = dict(tickmode = 'array',
-                                             tickvals = list(range(25)),
-                                             ticktext = [str(x) for x in range(12, 24)] + [str(x) for x in range(0, 13)],
-                                )
+                        title_font_size=25, 
+                        paper_bgcolor='#212024', 
+                        title_font_color='white',
+                        xaxis = dict(tickmode = 'array',
+                                        tickvals = list(range(25)),
+                                        ticktext = [str(x) for x in range(12, 24)] + [str(x) for x in range(0, 13)],
+                                        title="Hourangle (t)"),
+                        yaxis = dict(title="Declination (δ)",
+                                    tickmode = 'array',
+                                    tickvals = np.arange(-30,90,10)),
+                                    
+                                
     )
 
     return fig
@@ -422,8 +428,12 @@ def read_textfield(text):
     for i, row in enumerate(splitted_text):
         if not row:
             continue
-        splitted_row = row.split(',')
-        str_row = [str(f) for f in splitted_row[0:]]
+        splitted_row = row.split()
+        splitted_coords = [splitted_row[0], 
+                            ' '.join(splitted_row[1:4]), 
+                            ' '.join(splitted_row[4:])
+                        ]
+        str_row = [str(f) for f in splitted_coords[0:]]
         object_data.append(str_row)
 
     object_array = np.array(object_data)
