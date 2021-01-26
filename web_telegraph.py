@@ -238,13 +238,13 @@ def update_figure(n_intervals, data, telescope_position):
                              fill='toself',fillcolor='green',
                              mode='none'),row=1,col=1)
 
-    fig.add_trace(go.Scatter(x = f_zone_data['right_x'], 
-                             y = f_zone_data['right_y'], 
+    fig.add_trace(go.Scatter(x=f_zone_data['right_x'], 
+                             y=f_zone_data['right_y'], 
                              fill='toself',fillcolor='green',
                              mode='none'))
 
-    fig.add_trace(go.Scatter(x = f_zone_data['up_x'], 
-                             y = f_zone_data['up_y'], 
+    fig.add_trace(go.Scatter(x=f_zone_data['up_x'], 
+                             y=f_zone_data['up_y'], 
                              fill='toself',fillcolor='purple',
                              mode='none')) 
     if telescope_position:
@@ -256,16 +256,22 @@ def update_figure(n_intervals, data, telescope_position):
     if data:
         input_array = read_textfield(data)
         array_for_plot = coordinates_calculations(input_array)
-        ra_hex, dec_hex = deg_to_hex(array_for_plot[:,1], 
-                                            array_for_plot[:,2]
-                                            )
+        ra_hex, dec_hex = deg_to_hex(
+            array_for_plot[:,1], 
+            array_for_plot[:,2]
+            )
+        #shifting the points to correspond to the diagram ticks
+        logging.info(f'array_for_plot[:,1], {array_for_plot[:,1]}')
+        array_for_plot[:,1] = (array_for_plot[:,1].astype(float) + 12)%24
+
+        
         # array_for_plot =  coordinates_calculations()
         fig.add_trace(
             go.Scatter(
                 x=array_for_plot[:,1],
                 y=array_for_plot[:,2],
                 hovertemplate=[
-                    f'RA:{x} DEC:{y}' for x, y in zip(ra_hex, dec_hex)
+                    f'HA:{x} DEC:{y}' for x, y in zip(ra_hex, dec_hex)
                     ],
                 mode="markers+text", 
                 text=array_for_plot[:,0],
