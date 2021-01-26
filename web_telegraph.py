@@ -419,7 +419,7 @@ def mount_telescope(client):
 def read_textfield(text):
     object_data = []
     splitted_text = text.split('\n')
-    for i, row in enumerate (splitted_text):
+    for i, row in enumerate(splitted_text):
         if not row:
             continue
         splitted_row = row.split(',')
