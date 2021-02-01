@@ -196,8 +196,8 @@ def update_info_box(telescope_position, intervals):
 
     logging.info(f'Updating info box with telescope coordinates {telescope_position}')
     if telescope_position:
-        right_ascension, declination = deg_to_hex(telescope_position['hours'],
-                                                  telescope_position['degrees'])
+        right_ascension, declination = deg_to_hex(np.array([telescope_position['hours']]),
+                                                  np.array([telescope_position['degrees']]))
         
     else:
         right_ascension = '.. : .. : ..'
