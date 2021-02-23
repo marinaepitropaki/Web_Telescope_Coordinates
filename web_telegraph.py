@@ -319,13 +319,15 @@ def update_figure(n_intervals, data, telescope_position):
 
 def deg_to_hex(hours, dec):
 
-    hourangle_transform = 12.0
+    hourangle_transform = 12 
     logging.info(f'hours{hours}, dec{dec}')
     hourangle = hours.astype(np.float)
+
     if hourangle < hourangle_transform:
         hourangle = hourangle + hourangle_transform
-    if hourangle >=hourangle_transform:
-        hourangle = ahourangle - hourangle_transform
+    if hourangle >= hourangle_transform:
+        hourangle = hourangle - hourangle_transform
+
     logging.info(f'hourangle{hourangle}')
     mins = hourangle-np.modf(hourangle)[1]
     mins = mins*60
