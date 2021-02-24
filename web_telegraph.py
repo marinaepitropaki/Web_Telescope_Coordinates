@@ -250,7 +250,11 @@ def update_figure(n_intervals, data, telescope_position):
                              mode='none')) 
     if telescope_position:
         hover_telescope = np.array([telescope_position['hours']])
-        hover_telescope = [(x+12)%24 for x in hover_telescope]
+        for x in hover_telescope:
+            if x < 12 :
+                x = x + 12
+            if x >= 12 :
+                x = x - 12
         fig.add_trace(go.Scatter(x=[telescope_position['hours']], 
                                  y=[telescope_position['degrees']], 
                                  hovertemplate=[
