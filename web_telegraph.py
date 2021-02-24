@@ -255,7 +255,7 @@ def update_figure(n_intervals, data, telescope_position):
                 x = x + 12
             if x >= 12 :
                 x = x - 12
-        fig.add_trace(go.Scatter(x=hover_telescope, 
+        fig.add_trace(go.Scatter(x=[telescope_position['hours']], 
                                  y=[telescope_position['degrees']], 
                                  hovertemplate=[
                     f'HA:{x} DEC:{y}' for x, y in zip(hover_telescope, 
