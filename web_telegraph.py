@@ -253,7 +253,7 @@ def update_figure(n_intervals, data, telescope_position):
         fig.add_trace(go.Scatter(x=[telescope_position['hours']], 
                                  y=[telescope_position['degrees']], 
                                  hovertemplate=[
-                    f'HA:{x} DEC:{y}' for x, y in zip((np.array[telescope_position['hours']].astype(float) + 12)%24, 
+                    f'HA:{x} DEC:{y}' for x, y in zip([telescope_position['hours'], 
                                                     [telescope_position['degrees']])
                     ],
                                 mode="markers+text", text=['Telescope']),
@@ -325,7 +325,7 @@ def update_figure(n_intervals, data, telescope_position):
 def deg_to_hex(hours, dec):
 
     logging.info(f'hours{hours}, dec{dec}')
-    hourangle = hours.astype(np.float)
+    hourangle = (hours.astype(np.float)+12)%24
     logging.info(f'hourangle{hourangle}')
     mins = hourangle-np.modf(hourangle)[1]
     mins = mins*60
