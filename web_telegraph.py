@@ -200,7 +200,7 @@ def update_info_box(telescope_position, intervals):
         for x in telescope_position_hours:
             if x < 12 :
                 x = x + 12
-            if x >= 12 :
+            else :
                 x = x - 12
         right_ascension, declination = deg_to_hex(telescope_position_hours,
                                                   np.array([telescope_position['degrees']]))
@@ -261,7 +261,7 @@ def update_figure(n_intervals, data, telescope_position):
         for x in telescope_position_hours:
             if x < 12 :
                 x = x + 12
-            if x >= 12 :
+            else :
                 x = x - 12
         hover_tele_hours, hover_tele_deg = deg_to_hex(telescope_position_hours, 
                                                     telescope_position_degrees)
