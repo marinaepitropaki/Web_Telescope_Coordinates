@@ -198,6 +198,11 @@ def update_info_box(telescope_position, intervals):
     if telescope_position:
         right_ascension, declination = deg_to_hex(np.array([telescope_position['hours']]),
                                                   np.array([telescope_position['degrees']]))
+        for x in right_ascension:
+            if x < 12 :
+                x = x + 12
+            if x >= 12 :
+                x = x - 12
 
         
     else:
