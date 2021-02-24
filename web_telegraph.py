@@ -259,9 +259,9 @@ def update_figure(n_intervals, data, telescope_position):
         telescope_position_hours = np.array([telescope_position['hours']])
         telescope_position_degrees = np.array([telescope_position['degrees']])
         for x in telescope_position_hours:
-            if x < 12 :
+            if x <= 12 :
                 x = x + 12
-            if x >= 12 :
+            if x > 12 :
                 x = x - 12
         hover_tele_hours, hover_tele_deg = deg_to_hex(telescope_position_hours, 
                                                     telescope_position_degrees)
