@@ -268,7 +268,7 @@ def update_figure(n_intervals, data, telescope_position):
             )
         #shifting the points to correspond to the diagram ticks
         logging.info(f'array_for_plot[:,1], {array_for_plot[:,1]}')
-        array_for_plot[:,1] = (array_for_plot[:,1].astype(float) + 12)%24
+        array_for_plot[:,1] = array_for_plot[:,1]
 
         # array_for_plot =  coordinates_calculations()
         fig.add_trace(
