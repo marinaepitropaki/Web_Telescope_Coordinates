@@ -141,7 +141,7 @@ app.layout = dbc.Container(
                     html.Div([
                         html.Div(
                             dcc.Textarea(id='text-field',
-                                         placeholder = 'V432Per,03 10 10.8,42 52 08.8',
+                                         placeholder = 'V432Per 03 10 10.8 42 52 08.8',
                                          style={'width': 350, 
                                                 'height': 200,
                                                 'background-color': '#212024',
@@ -263,8 +263,8 @@ def update_figure(n_intervals, data, telescope_position):
                 x = x + 12
             if x >= 12 :
                 x = x - 12
-        hover_tele_hours, hover_tele_deg = deg_to_hex(telescope_position_hours, 
-                                                    telescope_position_degrees)
+        hover_tele_hours, hover_tele_deg = deg_to_hex(telescope_position_hours.tolist(), 
+                                                    telescope_position_degrees.tolist())
 
         fig.add_trace(go.Scatter(x=telescope_position_hours, 
                                  y=[telescope_position['degrees']], 
