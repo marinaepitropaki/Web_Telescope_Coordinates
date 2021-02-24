@@ -262,7 +262,7 @@ def update_figure(n_intervals, data, telescope_position):
             telescope_position_hours +=  12
         else :
             telescope_position_hours -=12
-        hover_tele_hours, hover_tele_deg = deg_to_hex(telescope_position_hours, 
+        hover_tele_hours, hover_tele_deg = deg_to_hex([telescope_position['hours']], 
                                                     telescope_position_degrees)
 
         fig.add_trace(go.Scatter(x=telescope_position_hours, 
@@ -425,10 +425,10 @@ def mount_telescope(client):
 
     hours = decoded_result['ra']/15
     
-    # if hours < 12:
-    #     hours = hours +12
-    # else:
-    #     hours = hours -12
+    if hours < 12:
+        hours = hours +12
+    else:
+        hours = hours -12
     time.sleep(1)
     decoded_result['dec'] = decoded_result['dec']*(180/math.pi)
     orientation='EAST'
