@@ -257,18 +257,20 @@ def update_figure(n_intervals, data, telescope_position):
                              mode='none')) 
     if telescope_position:
         telescope_position_hours = np.array([telescope_position['hours']])
+        telescope_position_degrees = np.array([telescope_position['degrees']])
         for x in telescope_position_hours:
             if x < 12 :
                 x = x + 12
             if x >= 12 :
                 x = x - 12
+        hover_tele_hours, hover_tele_deg = deg_to_hex(telescope_position_hours, 
+                                                    telescope_position_degrees)
 
         fig.add_trace(go.Scatter(x=telescope_position_hours, 
                                  y=[telescope_position['degrees']], 
                                  hovertemplate=[
-                    f'HA:{x} DEC:{y}' for x, y in zip(telescope_position_hours, 
-                                                    [telescope_position['degrees']])
-                    ],
+                                f'HA:{hover_tele_hours} DEC:{hover_tele_deg}'
+                                ],
                                 mode="markers+text", text=['Telescope']),
                                 row=1, col=1)
 
