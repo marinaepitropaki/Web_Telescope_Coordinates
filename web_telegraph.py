@@ -262,7 +262,7 @@ def update_figure(n_intervals, data, telescope_position):
             telescope_position_hours +=  12
         else :
             telescope_position_hours -=12
-        hover_tele_hours, hover_tele_deg = deg_to_hex([telescope_position['hours']], 
+        hover_tele_hours, hover_tele_deg = deg_to_hex(telescope_position_hours, 
                                                     telescope_position_degrees)
 
         fig.add_trace(go.Scatter(x=telescope_position_hours, 
