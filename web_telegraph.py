@@ -266,7 +266,7 @@ def update_figure(n_intervals, data, telescope_position):
         fig.add_trace(go.Scatter(x=telescope_position_hours, 
                                  y=[telescope_position['degrees']], 
                                  hovertemplate=[
-                    f'HA:{x} DEC:{y}' for x, y in zip([telescope_position['hours']], 
+                    f'HA:{x} DEC:{y}' for x, y in zip(telescope_position_hours, 
                                                     [telescope_position['degrees']])
                     ],
                                 mode="markers+text", text=['Telescope']),
