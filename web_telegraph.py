@@ -430,10 +430,10 @@ def mount_telescope(client):
 
     hours = decoded_result['ra']/15
     
-    if hours < 12:
-        hours = hours +12
-    else:
-        hours = hours -12
+    # if hours < 12:
+    #     hours = hours +12
+    # else:
+    #     hours = hours -12
     time.sleep(1)
     decoded_result['dec'] = decoded_result['dec']*(180/math.pi)
     orientation='EAST'
