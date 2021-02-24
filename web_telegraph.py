@@ -198,6 +198,7 @@ def update_info_box(telescope_position, intervals):
     if telescope_position:
         right_ascension, declination = deg_to_hex(np.array([telescope_position['hours']]),
                                                   np.array([telescope_position['degrees']]))
+
         
     else:
         right_ascension = '.. : .. : ..'
@@ -249,7 +250,12 @@ def update_figure(n_intervals, data, telescope_position):
                              mode='none')) 
     if telescope_position:
         
-        fig.add_trace(go.Scatter(x=[telescope_position['hours']], y=[telescope_position['degrees']], 
+        fig.add_trace(go.Scatter(x=[telescope_position['hours']], 
+                                 y=[telescope_position['degrees']], 
+                                 hovertemplate=[
+                    f'HA:{x} DEC:{y}' for x, y in zip(telescope_position['hours'], 
+                                                    telescope_position['degrees'])
+                    ],
                                 mode="markers+text", text=['Telescope']),
                                 row=1, col=1)
 
@@ -264,7 +270,6 @@ def update_figure(n_intervals, data, telescope_position):
         logging.info(f'array_for_plot[:,1], {array_for_plot[:,1]}')
         array_for_plot[:,1] = (array_for_plot[:,1].astype(float) + 12)%24
 
-        
         # array_for_plot =  coordinates_calculations()
         fig.add_trace(
             go.Scatter(
@@ -319,15 +324,8 @@ def update_figure(n_intervals, data, telescope_position):
 
 def deg_to_hex(hours, dec):
 
-    hourangle_transform = 12 
     logging.info(f'hours{hours}, dec{dec}')
     hourangle = hours.astype(np.float)
-
-    if hourangle < hourangle_transform:
-        hourangle = hourangle + hourangle_transform
-    if hourangle >= hourangle_transform:
-        hourangle = hourangle - hourangle_transform
-
     logging.info(f'hourangle{hourangle}')
     mins = hourangle-np.modf(hourangle)[1]
     mins = mins*60
