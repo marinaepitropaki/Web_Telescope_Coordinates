@@ -417,7 +417,7 @@ def mount_telescope(client):
     # hours = decoded_result['ra'] 
 
     hours = decoded_result['ra']/15
-    hours = hours +24
+    hours = hours +12
 
     time.sleep(1)
     decoded_result['dec'] = decoded_result['dec']*(180/math.pi)
