@@ -197,10 +197,7 @@ def update_info_box(telescope_position, intervals):
     logging.info(f'Updating info box with telescope coordinates {telescope_position}')
     if telescope_position:
         telescope_position_hours = np.array([telescope_position['hours']])
-        if telescope_position_hours < 12 :
-            telescope_position_hours +=  12
-        else :
-            telescope_position_hours -=12
+
         right_ascension, declination = deg_to_hex(telescope_position_hours,
                                                   np.array([telescope_position['degrees']]))
 
@@ -257,10 +254,7 @@ def update_figure(n_intervals, data, telescope_position):
     if telescope_position:
         telescope_position_hours = np.array([telescope_position['hours']])
         telescope_position_degrees = np.array([telescope_position['degrees']])
-        if telescope_position_hours < 12 :
-            telescope_position_hours +=  12
-        else :
-            telescope_position_hours -=12
+
         hover_tele_hours, hover_tele_deg = deg_to_hex(telescope_position_hours, 
                                                     telescope_position_degrees)
 
@@ -338,7 +332,7 @@ def update_figure(n_intervals, data, telescope_position):
 def deg_to_hex(hours, dec):
 
     logging.info(f'hours{hours}, dec{dec}')
-    hourangle = (hours.astype(np.float).astype(float) + 12)%24
+    hourangle = (hours.astype(np.float)
     logging.info(f'hourangle{hourangle}')
     mins = hourangle-np.modf(hourangle)[1]
     mins = mins*60
@@ -423,11 +417,7 @@ def mount_telescope(client):
     # hours = decoded_result['ra'] 
 
     hours = decoded_result['ra']/15
-    
-    if hours < 12:
-        hours = hours +12
-    else:
-        hours = hours -12
+
     time.sleep(1)
     decoded_result['dec'] = decoded_result['dec']*(180/math.pi)
     orientation='EAST'
