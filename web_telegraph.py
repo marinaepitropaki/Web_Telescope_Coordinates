@@ -280,11 +280,10 @@ def update_figure(n_intervals, data, telescope_position):
             array_for_plot[:,1], 
             array_for_plot[:,2]
             )
+
         #shifting the points to correspond to the diagram ticks
         logging.info(f'array_for_plot[:,1], {array_for_plot[:,1]}')
-        array_for_plot[:,1] = array_for_plot[:,1]
 
-        # array_for_plot =  coordinates_calculations()
         fig.add_trace(
             go.Scatter(
                 x=array_for_plot[:,1],
@@ -493,14 +492,10 @@ def hourangle_conversion(object_array, LST, observing_time):
     for i, l in enumerate(object_array_LHA[:,1]):
         l = float(l) * u.hourangle
         if l < 0 * u.hourangle:
-            l += 24 * u.hourangle
-            object_array_LHA[i,1] = l    
-    for i, l in enumerate(object_array_LHA[:,1]):
-        l = float(l) * u.hourangle
-        if l < 12*u.hourangle:
-            object_array_LHA[i,1] = l + 12*u.hourangle
-        elif l >= 12*u.hourangle:
-            object_array_LHA[i,1] = l - 12*u.hourangle    
+            l = abs(l) * u.hourangle
+            object_array_LHA[i,1] = l
+
+    logging.info(f'object_array_LHA[:,1] {object_array_LHA[:,1]}')
     
     return object_array_LHA
 
