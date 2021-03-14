@@ -466,6 +466,7 @@ def read_textfield(text):
         object_data.append(str_row)
 
     object_array = np.array(object_data)
+    logging.info(f"object_array {object_array} line 469")
     return object_array
 
 
