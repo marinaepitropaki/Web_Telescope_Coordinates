@@ -172,7 +172,7 @@ app.layout = dbc.Container(
     Input('main-interval', 'n_intervals'))
 def update_telescope_state(interval):
 
-    logging.info('Updating telescope state')
+    logging.info('Updating telescope state line 175')
     
     # is_open = client.is_socket_open()
     telescope_position = {}
@@ -194,7 +194,7 @@ def update_telescope_state(interval):
     Input('main-interval', 'n_intervals'))
 def update_info_box(telescope_position, intervals):
 
-    logging.info(f'Updating info box with telescope coordinates {telescope_position}')
+    logging.info(f'Updating info box with telescope coordinates {telescope_position} line 197')
     if telescope_position:
         telescope_position_hourangle = np.array([telescope_position['hourangle']])
         if telescope_position_hourangle < 12:
@@ -282,7 +282,7 @@ def update_figure(n_intervals, data, telescope_position):
             )
 
         #shifting the points to correspond to the diagram ticks
-        logging.info(f'array_for_plot[:,1], {array_for_plot[:,1]}')
+        logging.info(f'array_for_plot[:,1], {array_for_plot[:,1]} line 285')
 
         fig.add_trace(
             go.Scatter(
@@ -337,9 +337,9 @@ def update_figure(n_intervals, data, telescope_position):
 
 def deg_to_hex(hourangle_in_hours, dec):
 
-    logging.info(f'hourangle_in_hours{hourangle_in_hours}, dec{dec}')
+    logging.info(f'hourangle_in_hours{hourangle_in_hours}, dec{dec} line 340')
     hourangle = hourangle_in_hours.astype(np.float)
-    logging.info(f'hourangle{hourangle}')
+    logging.info(f'hourangle{hourangle} line 342')
     mins = hourangle-np.modf(hourangle)[1]
     mins = mins*60
     secs = mins - np.modf(mins)[1]
@@ -351,7 +351,7 @@ def deg_to_hex(hourangle_in_hours, dec):
     ra_in_hourangle =[]  
     for h in ra.astype(int).T:
         ra_in_hourangle.append(f'{h[0]:02d}:{h[1]:02d}:{h[2]:02d}')
-    logging.info(f'ra_in_hourangle{ra_in_hourangle}')
+    logging.info(f'ra_in_hourangle{ra_in_hourangle} line 354')
 
     degr = dec.astype(np.float)
     logging.info(f'degr{degr}')
@@ -367,7 +367,7 @@ def deg_to_hex(hourangle_in_hours, dec):
     declination=[]
     for d in dec.astype(int).T:
         declination.append(f'{d[0]:02d}:{d[1]:02d}:{d[2]:02d}')
-    logging.info(f'declination{declination}')
+    logging.info(f'declination{declination} line 370')
 
     return ra_in_hourangle, declination
     
@@ -436,7 +436,7 @@ def mount_telescope(client):
         dec_in_degrees = -180-dec_in_degrees
         orientation = 'WEST'
     coordinates_to_calculate = np.array([orientation, ra_in_hours, dec_in_degrees])
-    logging.info(f"coordinates_to_calculate: {coordinates_to_calculate}")
+    logging.info(f"coordinates_to_calculate: {coordinates_to_calculate} line 439")
     #conversion
     telescope_in_hourangle_dec = coordinates_calculations(coordinates_to_calculate)
     ra_in_hourangle = telescope_in_hourangle_dec[:,1]
@@ -446,7 +446,7 @@ def mount_telescope(client):
                           'dec_in_degrees': dec_in_degrees,
                           'orientation':orientation}
     
-    logging.info(f'TELESCOPE MOUNTED {telescope_position}')  
+    logging.info(f'TELESCOPE MOUNTED {telescope_position} 449')  
     time.sleep(0.5)
     return telescope_position
 
@@ -503,7 +503,7 @@ def hourangle_conversion(object_array, LST, observing_time):
         #     l = abs(l) * u.hourangle
         #     object_array_LHA[i,1] = l
 
-    logging.info(f'object_array_LHA[:,1] {object_array_LHA[:,1]}')
+    logging.info(f'object_array_LHA[:,1] {object_array_LHA[:,1]} line 506')
     
     return object_array_LHA
 
