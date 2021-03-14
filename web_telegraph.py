@@ -348,10 +348,10 @@ def deg_to_hex(hourangle_in_hours, dec):
                     np.modf(secs)[1]
                     ])
 
-    right_ascension =[]  
+    ra_in_hourangle =[]  
     for h in ra.astype(int).T:
-        right_ascension.append(f'{h[0]:02d}:{h[1]:02d}:{h[2]:02d}')
-    logging.info(f'right_ascension{right_ascension}')
+        ra_in_hourangle.append(f'{h[0]:02d}:{h[1]:02d}:{h[2]:02d}')
+    logging.info(f'ra_in_hourangle{ra_in_hourangle}')
 
     degr = dec.astype(np.float)
     logging.info(f'degr{degr}')
@@ -369,7 +369,7 @@ def deg_to_hex(hourangle_in_hours, dec):
         declination.append(f'{d[0]:02d}:{d[1]:02d}:{d[2]:02d}')
     logging.info(f'declination{declination}')
 
-    return right_ascension, declination
+    return ra_in_hourangle, declination
     
 
 
@@ -435,9 +435,9 @@ def mount_telescope(client):
     elif dec_in_degrees < -90:
         dec_in_degrees = -180-dec_in_degrees
         orientation = 'WEST'
+    coordinates_to_calculate = np.array([orientation, ra_in_hours, dec_in_degrees])
     #conversion
-    telescope_in_hourangle_dec = coordinates_calculations([orientation,ra_in_hours,
-                                                                dec_in_degrees])
+    telescope_in_hourangle_dec = coordinates_calculations(coordinates_to_calculate)
     ra_in_hourangle = telescope_in_hourangle_dec[:,1]
     dec_in_degrees = telescope_in_hourangle_dec[:,2]
     
@@ -497,9 +497,9 @@ def hourangle_conversion(object_array, LST, observing_time):
     object_array_LHA[:,1] = LHA    
     for i, l in enumerate(object_array_LHA[:,1]):
         l = float(l) * u.hourangle
-        if l < 0 * u.hourangle:
-            l = abs(l) * u.hourangle
-            object_array_LHA[i,1] = l
+        # if l < 0 * u.hourangle:
+        #     l = abs(l) * u.hourangle
+        #     object_array_LHA[i,1] = l
 
     logging.info(f'object_array_LHA[:,1] {object_array_LHA[:,1]}')
     
