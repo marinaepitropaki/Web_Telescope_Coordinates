@@ -436,6 +436,7 @@ def mount_telescope(client):
         dec_in_degrees = -180-dec_in_degrees
         orientation = 'WEST'
     coordinates_to_calculate = np.array([orientation, ra_in_hours, dec_in_degrees])
+    logging.info(f"coordinates_to_calculate: {coordinates_to_calculate}")
     #conversion
     telescope_in_hourangle_dec = coordinates_calculations(coordinates_to_calculate)
     ra_in_hourangle = telescope_in_hourangle_dec[:,1]
