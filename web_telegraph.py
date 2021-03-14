@@ -495,7 +495,8 @@ def hourangle_conversion(object_array, LST, observing_time):
     object_array_LHA[:,2] = coo.dec
     FK5_Jnow = FK5(equinox=observing_time)
     LHA = LST - coo.transform_to(FK5_Jnow).ra.to(u.hourangle)
-    object_array_LHA[:,1] = LHA    
+    object_array_LHA[:,1] = LHA 
+    logging.info(f'object_array_LHA[:,1] {object_array_LHA[:,1]} line 499')   
     for i, l in enumerate(object_array_LHA[:,1]):
         l = float(l) * u.hourangle
         # l = l + 12*u.hourangle
