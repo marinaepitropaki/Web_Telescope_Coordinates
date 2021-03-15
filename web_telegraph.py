@@ -282,6 +282,7 @@ def update_figure(n_intervals, data, telescope_position):
             )
 
         #shifting the points to correspond to the diagram ticks
+        array_for_plot[:, 1] = (array_for_plot[:, 1] + 12*u.hourangle) % 24
         logging.info(f'array_for_plot[:,1], {array_for_plot[:,1]} line 285')
 
         fig.add_trace(
