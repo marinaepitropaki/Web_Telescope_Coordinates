@@ -500,10 +500,9 @@ def hourangle_conversion(object_array, LST, observing_time):
     logging.info(f'object_array_LHA[:,1] {object_array_LHA[:,1]} line 499')   
     for i, l in enumerate(object_array_LHA[:,1]):
         l = float(l) * u.hourangle
-        # l = l + 12*u.hourangle
-        # if l < 0 * u.hourangle:
-        #     l = abs(l) * u.hourangle
-        #     object_array_LHA[i,1] = l
+        if l < 0 * u.hourangle:
+            l = (24 - abs(l)) * u.hourangle
+            object_array_LHA[i,1] = l
 
     logging.info(f'object_array_LHA[:,1] {object_array_LHA[:,1]} line 506')
     
